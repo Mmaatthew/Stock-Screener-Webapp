@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Screener</title>
+    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Main container -->
+    <div class="container">
+        <h1>Stock Screener</h1>
+
+        <!-- Filters Section -->
+        <div class="filters-container">
+            <div class="form-group">
+                <label>Market Cap:</label>
+                <input type="text" id="marketCapMax" placeholder="(Max)">
+                <input type="text" id="marketCapMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>PE Ratio:</label>
+                <input type="number" id="peMax" placeholder="(Max)">
+                <input type="number" id="peMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Forward PE:</label>
+                <input type="number" id="forwardPeMax" placeholder="(Max)">
+                <input type="number" id="forwardPeMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>P/S Ratio:</label>
+                <input type="number" id="psMax" placeholder="(Max)">
+                <input type="number" id="psMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>P/B Ratio:</label>
+                <input type="number" id="pbMax" placeholder="(Max)">
+                <input type="number" id="pbMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Dividend Yield (%):</label>
+                <input type="number" id="dividendYieldMax" placeholder="(Max)">
+                <input type="number" id="dividendYieldMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Current Ratio:</label>
+                <input type="number" id="currentRatioMax" placeholder="(Max)">
+                <input type="number" id="currentRatioMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Debt/Equity:</label>
+                <input type="number" id="debtEquityMax" placeholder="(Max)">
+                <input type="number" id="debtEquityMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Revenue Growth 4Y (%):</label>
+                <input type="number" id="revenueGrowthMax" placeholder="(Max)">
+                <input type="number" id="revenueGrowthMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>EPS Growth 4Y (%):</label>
+                <input type="number" id="epsGrowthMax" placeholder="(Max)">
+                <input type="number" id="epsGrowthMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Forward EPS Growth (%):</label>
+                <input type="number" id="forwardEpsGrowthMax" placeholder="(Max)">
+                <input type="number" id="forwardEpsGrowthMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>EPS:</label>
+                <input type="number" id="epsMax" placeholder="(Max)">
+                <input type="number" id="epsMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>PEG Ratio:</label>
+                <input type="number" id="pegMax" placeholder="(Max)">
+                <input type="number" id="pegMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>ROE (%):</label>
+                <input type="number" id="roeMax" placeholder="(Max)">
+                <input type="number" id="roeMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>ROA (%):</label>
+                <input type="number" id="roaMax" placeholder="(Max)">
+                <input type="number" id="roaMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>ROIC (%):</label>
+                <input type="number" id="roicMax" placeholder="(Max)">
+                <input type="number" id="roicMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Profit Margin (%):</label>
+                <input type="number" id="profitMarginMax" placeholder="(Max)">
+                <input type="number" id="profitMarginMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Gross Margin (%):</label>
+                <input type="number" id="grossMarginMax" placeholder="(Max)">
+                <input type="number" id="grossMarginMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Free Cash Flow Yield (%):</label>
+                <input type="number" id="fcfYieldMax" placeholder="(Max)">
+                <input type="number" id="fcfYieldMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>EV/EBITDA:</label>
+                <input type="number" id="evEbitdaMax" placeholder="(Max)">
+                <input type="number" id="evEbitdaMin" placeholder="(Min)">
+            </div>
+            <div class="form-group">
+                <label>Recent 52-Week High:</label>
+                <select id="recent52WeekHigh">
+                    <option value="Any">Any</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="sector">Sector:</label>
+                <select id="sector">
+                    <option value="Any">Any</option>
+                    <option value="Basic Materials">Basic Materials</option>
+                    <option value="Communication Services">Communication Services</option>
+                    <option value="Consumer Cyclical">Consumer Cyclical</option>
+                    <option value="Consumer Defensive">Consumer Defensive</option>
+                    <option value="Energy">Energy</option>
+                    <option value="Financial Services">Financial Services</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Industrials">Industrials</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Utilities">Utilities</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Buttons Section -->
+        <div class="button-container">
+            <div class="center-buttons">
+                <button id="filter_data">Apply Filters</button>
+                <button id="reset_filters">Reset Filters</button>
+            </div>
+            <div class="right-button">
+                <button id="export_csv">Export to CSV</button>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div id="table-container">
+            <div id="stock-table"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
