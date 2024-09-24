@@ -49,6 +49,7 @@ def fetch_and_save_metrics():
 # Function to run all tasks daily in sequence
 def run_daily_tasks():
     scrape_and_save()            # Step 1: Scrape stock tickers
+    print("All files have been scraped and saved.")
     fetch_and_save_metrics()     # Step 2: Fetch financial metrics
     print("All tasks completed for the day.")
 
@@ -56,7 +57,7 @@ def run_daily_tasks():
 scheduler = BackgroundScheduler()
 
 # Schedule the tasks to run daily at 4:30 PM (you can adjust the time)
-scheduler.add_job(run_daily_tasks, CronTrigger(hour=16, minute=30))  # Runs at 4:30 PM every day
+scheduler.add_job(run_daily_tasks, CronTrigger(hour=16, minute=45))  # Runs at 4:30 PM every day
 
 # Start the scheduler
 scheduler.start()
