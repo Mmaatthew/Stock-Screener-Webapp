@@ -3,7 +3,7 @@
 name = "python"
 version = "3.10"
 
-# Setup phase to install necessary dependencies
+# Setup phase to install dependencies
 [phases.install]
 commands = [
   "python3 -m ensurepip --upgrade",
@@ -14,10 +14,10 @@ commands = [
 # Start phase to run Gunicorn
 [phases.start]
 commands = [
-  "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+  "python3 -m gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
 ]
 
-# Any additional environment variables
+# Additional environment variables
 [variables]
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
