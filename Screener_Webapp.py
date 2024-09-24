@@ -10,8 +10,6 @@ from apscheduler.triggers.cron import CronTrigger
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 import numpy as np
-import json
-
 
 
 app = Flask(__name__)
