@@ -3,20 +3,21 @@
 name = "python"
 version = "3.10"
 
-# Install dependencies from requirements.txt
+# Install phase: Install dependencies from requirements.txt
 [phases.install]
 commands = [
-    "python3 -m pip install -r requirements.txt"  # Explicitly use python3 for pip
+    "python3 -m ensurepip --upgrade",  # Ensure pip is installed and upgraded
+    "python3 -m pip install --upgrade pip",
+    "python3 -m pip install -r requirements.txt"
 ]
 
-# Start the application with Gunicorn
+# Start the application using Gunicorn
 [phases.start]
 commands = [
-    "python3 -m pip show gunicorn",  # Explicitly use python3 for pip
-    "python3 -m gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"  # Ensure gunicorn is called with python3
+    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
 ]
 
-# Set environment variables for Flask
+# Environment variables for Flask
 [variables]
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
