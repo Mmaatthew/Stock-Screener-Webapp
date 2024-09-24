@@ -1,12 +1,21 @@
-[providers.python]
-engine = "python"
-version = "3.10"
-
-[phases]
-install = "pip install --upgrade pip && pip install -r requirements.txt"
-
 [phases.setup]
-run = "pip install --upgrade pip && pip install -r requirements.txt"
+# Install Python dependencies
+commands = [
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
+]
+
+[phases.install]
+# Run any additional install steps if needed (optional)
 
 [phases.start]
-run = "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+# Run the Gunicorn server to start the Flask app
+commands = [
+    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+]
+
+[providers.python]
+# Specify the Python version and other related setup
+version = "3.10"
+
+# Optional settings for caching or optimizations can be added
