@@ -8,13 +8,13 @@ version = "3.10"
 commands = [
     "python3 -m ensurepip --upgrade",  # Ensure pip is installed and upgraded
     "python3 -m pip install --upgrade pip",
-    "python3 -m pip install -r requirements.txt"
+    "python3 -m pip install -r requirements.txt"  # Install all dependencies, including gunicorn
 ]
 
 # Start the application using Gunicorn
 [phases.start]
 commands = [
-    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+    "python3 -m gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"  # Make sure to use the python3 environment
 ]
 
 # Environment variables for Flask
