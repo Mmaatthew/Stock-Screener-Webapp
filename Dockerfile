@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 # Run the application using Gunicorn
-CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "Screener_Webapp:app"]
+CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:3000", "Screener_Webapp:app"]
