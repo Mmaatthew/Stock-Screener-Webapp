@@ -1,17 +1,24 @@
 # Specify the providers
 providers = ["python"]
 
+# Install phase with virtual environment setup
 [phases.install]
 cmds = [
-    "pip install --upgrade pip",
-    "pip install -r requirements.txt"
+    "python3 -m venv venv",  # Create a virtual environment
+    "source venv/bin/activate",  # Activate the virtual environment
+    "pip install --upgrade pip",  # Upgrade pip
+    "pip install -r requirements.txt"  # Install the dependencies
 ]
 
+# Start phase with Gunicorn running from the virtual environment
 [phases.start]
 cmds = [
-    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+    "source venv/bin/activate",  # Activate the virtual environment before starting the app
+    "echo $PATH",  # Print the PATH to debug if necessary
+    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"  # Start Gunicorn server
 ]
 
+# Environment variables for Flask
 [variables]
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
