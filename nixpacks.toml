@@ -6,14 +6,14 @@ version = "3.10"
 # Install dependencies from requirements.txt
 [phases.install]
 commands = [
-    "pip install -r requirements.txt"
+    "python3 -m pip install -r requirements.txt"  # Explicitly use python3 for pip
 ]
 
 # Start the application with Gunicorn
 [phases.start]
 commands = [
-    "pip show gunicorn",  # Check if Gunicorn is installed
-    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+    "python3 -m pip show gunicorn",  # Explicitly use python3 for pip
+    "python3 -m gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"  # Ensure gunicorn is called with python3
 ]
 
 # Set environment variables for Flask
