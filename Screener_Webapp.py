@@ -10,7 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 import numpy as np
-
+import os
 
 app = Flask(__name__)
 
@@ -31,7 +31,8 @@ def scrape_and_save():
     df = download_universe.scrape_all_tickers()
 
     # Save to CSV
-    df.to_csv("Stock_Universe.csv", index=False)
+    output_path = os.path.join(os.getcwd(), "Stock_Universe.csv")
+    df.to_csv(output_path, index=False)
 
 
 def fetch_and_save_metrics():
@@ -43,25 +44,37 @@ def fetch_and_save_metrics():
     max_workers = 10
 
     # Call the function to fetch financial data and save it
-    Stock_Screener.fetch_financial_data_and_save(tickers_df, output_csv, max_workers,)
+    Stock_Screener.fetch_financial_data_and_save(tickers_df, output_csv, max_workers)
+    print(f"Financial metrics saved to {output_csv}")
 
 
 # Function to run all tasks daily in sequence
 def run_daily_tasks():
-    scrape_and_save()            # Step 1: Scrape stock tickers
-    print("All files have been scraped and saved.")
-    fetch_and_save_metrics()     # Step 2: Fetch financial metrics
-    print("All tasks completed for the day.")
+    try:
+        scrape_and_save()            # Step 1: Scrape stock tickers
+        print("All files have been scraped and saved.")
+    except Exception as e:
+        print(f"Error during scraping: {str(e)}")
+
+    try:
+        fetch_and_save_metrics()     # Step 2: Fetch financial metrics
+        print("All tasks completed for the day.")
+    except Exception as e:
+        print(f"Error during financial metrics fetching: {str(e)}")
 
 # Initialize the APScheduler
 scheduler = BackgroundScheduler()
 
 # Schedule the tasks to run daily at 4:30 PM (you can adjust the time)
-scheduler.add_job(run_daily_tasks, CronTrigger(hour=20, minute=45))  # Runs at 4:30 PM every day
+scheduler.add_job(run_daily_tasks, CronTrigger(hour=21, minute=38))  # Runs at 4:30 PM every day
 
 # Start the scheduler
 scheduler.start()
 
+# Flask route to check if the tasks are running
+@app.route('/check-status', methods=['GET'])
+def check_status():
+    return jsonify({'status': 'Tasks are running'})
 
 @app.route('/get_initial_data', methods=['GET'])
 def get_initial_data():
@@ -113,10 +126,11 @@ def open_browser():
 
 if __name__ == '__main__':
     # Start the Flask app in a separate thread
-    flask_thread = threading.Thread(target=app.run, kwargs={'debug': False, 'use_reloader': False})
+    flask_thread = threading.Thread(target=app.run, kwargs={'debug': False, 'use_reloader': False, 'host': '0.0.0.0', 'port': 3000})
     flask_thread.start()
 
-    # Automatically open the web browser after a slight delay
-    open_browser()
+    # Automatically open the web browser after a slight delay (optional)
+    # Comment this out if running on a headless environment like Coolify
+    # open_browser()
 
     flask_thread.join()  # Wait for the Flask thread to complete

@@ -9,6 +9,31 @@ from selenium.common.exceptions import NoSuchElementException
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm  # Progress bar
 
+def get_chrome_driver():
+    """
+    Installs ChromeDriver and returns a WebDriver instance.
+    This ensures that Chrome is run in headless mode with proper options for Linux environments.
+    """
+    try:
+        # Install ChromeDriver
+        driver_path = ChromeDriverManager().install()
+
+        # Set up the Chrome WebDriver service
+        service = Service(driver_path)
+
+        # Set up Chrome options for headless mode and other performance improvements
+        options = webdriver.ChromeOptions()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--headless")  # Headless mode for running without GUI
+        options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource issues
+
+        # Return the WebDriver instance
+        driver = webdriver.Chrome(service=service, options=options)
+        return driver
+    except Exception as e:
+        print(f"Error while setting up ChromeDriver: {str(e)}")
+        return None
+
 def close_popup(driver):
     try:
         # Locate the close button with the class 'w-6 h-6 text-icon'
