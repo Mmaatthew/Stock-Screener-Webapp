@@ -8,6 +8,6 @@ install = "pip install -r requirements.txt"
 # Run Gunicorn to serve the Flask app
 start = "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
 
-[static]
-# Folder containing static assets like JS, CSS
-directory = "static"
+[variables]
+FLASK_APP = "Screener_Webapp.py"
+FLASK_ENV = "production"
