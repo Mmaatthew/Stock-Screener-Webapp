@@ -1,14 +1,17 @@
 # Specify the providers
 providers = ["python"]
 
-[phases]
-# Phase to install the dependencies using the requirements.txt file
-install = "pip install -r requirements.txt"
+[phases.install]
+cmds = [
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
+]
 
-# Command to start the Gunicorn server for the Flask app
-start = "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+[phases.start]
+cmds = [
+    "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+]
 
 [variables]
-# Environment variables for Flask
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
