@@ -1,19 +1,22 @@
-# Specify the python provider and the Python version you're using
-[providers.python]
+# Specify the provider and version for Python
+[provider]
+name = "python"
 version = "3.10"
 
-# Setup phase: Install required dependencies using pip
+# Setup phase: install dependencies
 [phases.setup]
-cmds = [
+commands = [
   "pip install --upgrade pip",
   "pip install -r requirements.txt"
 ]
 
-# Start phase: Use Gunicorn to serve your Flask app
+# Start phase: run the application with Gunicorn
 [phases.start]
-cmd = "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+commands = [
+  "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
+]
 
-# Environment variables for Flask
+# Environment variables
 [variables]
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
