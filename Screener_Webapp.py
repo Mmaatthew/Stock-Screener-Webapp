@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
 import numpy as np
 
 
@@ -20,9 +21,14 @@ def index():
 
 # Preload ChromeDriver at the start of the Flask app
 def preload_chromedriver():
-    print("Preloading ChromeDriver...")
-    service = Service(ChromeDriverManager().install())
-    print("ChromeDriver preloaded.")
+    try:
+        # Force redownload by setting cache_valid_range to 0
+        service = Service(ChromeDriverManager(cache_valid_range=0).install())
+        driver = webdriver.Chrome(service=service)
+        driver.quit()
+        print("ChromeDriver preloaded successfully.")
+    except Exception as e:
+        print(f"Error while preloading ChromeDriver: {e}")
 
 preload_chromedriver()  # This ensures the ChromeDriver is ready when the scheduled task runs
 
