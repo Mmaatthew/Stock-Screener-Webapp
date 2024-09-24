@@ -3,21 +3,19 @@
 name = "python"
 version = "3.10"
 
-[phases.setup]
-commands = [
-    "pip install --upgrade pip"
-]
-
+# Remove the manual pip upgrade step since Nixpacks installs dependencies automatically
 [phases.install]
 commands = [
-    "pip install -r requirements.txt"
+    "pip install --no-cache-dir -r requirements.txt"
 ]
 
+# Start the app using gunicorn
 [phases.start]
 commands = [
     "gunicorn --workers 3 --bind 0.0.0.0:8000 Screener_Webapp:app"
 ]
 
+# Flask environment variables
 [variables]
 FLASK_APP = "Screener_Webapp.py"
 FLASK_ENV = "production"
