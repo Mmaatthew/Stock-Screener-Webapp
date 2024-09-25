@@ -66,7 +66,7 @@ def run_daily_tasks():
 scheduler = BackgroundScheduler()
 
 # Schedule the tasks to run daily at 4:30 PM (you can adjust the time)
-scheduler.add_job(run_daily_tasks, CronTrigger(hour=21, minute=41))  # Runs at 4:30 PM every day
+scheduler.add_job(run_daily_tasks, CronTrigger(hour=20, minute=35))  # Runs at 4:30 PM every day
 
 # Start the scheduler
 scheduler.start()
