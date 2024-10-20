@@ -126,4 +126,4 @@ if __name__ == '__main__':
     df = scrape_all_tickers()
 
     # Save the DataFrame to CSV
-    df.to_csv("Stock Universe.csv", index=False)
+    df.to_csv("Stock_Universe.csv", index=False)

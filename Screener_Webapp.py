@@ -92,11 +92,19 @@ def get_initial_data():
     # Return the data directly as a JSON response
     return jsonify(data)
 
+@app.route('/get_industries', methods=['GET'])
+def get_industries():
+    # Load the dataset
+    df = pd.read_csv("financial_metrics.csv")
+
+    # Get unique non-null industries
+    industries = df['Industry'].dropna().unique().tolist()
+
+    # Return the unique industries as JSON
+    return jsonify(industries)
 
 @app.route('/filter_data', methods=['POST'])
 def filter_data():
-    # Default filters dictionary
-
     # Get the incoming JSON data from the request (filters sent from the frontend)
     received_filters = request.json
 
@@ -110,13 +118,11 @@ def filter_data():
 
     # Apply the filters using the filter_saved_data function
     filtered_df = Stock_Screener.filter_saved_data("financial_metrics.csv", filters)
-    # Assuming df is your DataFrame
-    filtered_df.to_csv('debug_output.csv', index=False)
+
     # Convert the filtered DataFrame to JSON and return it
     data = filtered_df.to_dict(orient='records')
 
     return jsonify(data)
-
 
 def open_browser():
     """Wait for the server to start, then open the default web browser."""

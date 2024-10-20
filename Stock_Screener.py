@@ -1,3 +1,5 @@
+from idlelib.iomenu import encoding
+
 import yfinance as yf
 import pandas as pd
 from tqdm import tqdm
@@ -240,7 +242,8 @@ def fetch_financial_data(ticker):
         'FCF/EV': 'N/A' if is_financial_institution else calculate_fcf_ev(stock, info),
         'EV/EBITDA': 'N/A' if is_financial_institution else safe_numeric(info.get('enterpriseToEbitda', 'N/A')),
         'Recent 52-Week High': check_new_52_week_high(stock),
-        'Sector': info.get('sector', 'N/A')
+        'Sector': info.get('sector', 'N/A'),
+        'Industry': info.get('industry', 'N/A'),  # Add this line to include Industry
     }
 
 
@@ -265,13 +268,22 @@ def fetch_financial_data_and_save(ticker_df, output_csv, max_workers=10):
 
     # Convert the list of data to a DataFrame and save it as CSV
     df = pd.DataFrame(data_list)
-    df.to_csv(output_csv, index=False)
+    df.to_csv(output_csv, index=False, encoding='utf-8')
     print(f"Data saved to {output_csv}")
+
+def clean_text(text):
+    """Cleans common problematic encoding issues in text."""
+    if isinstance(text, str):
+        text = text.replace('â€”', '—')  # Replace em dash
+    return text
 
 # Function to filter the saved data, format specific columns, and fill empty cells with "N/A"
 def filter_saved_data(input_csv, filters):
     # Load the saved CSV file
-    df = pd.read_csv(input_csv)
+    df = pd.read_csv(input_csv, encoding='utf-8')
+
+    # Clean text fields in case there are any encoding issues
+    df['Sector'] = df['Sector'].apply(clean_text)
 
     # Apply the filters passed as an argument
     for column, value in filters.items():
@@ -288,8 +300,7 @@ def filter_saved_data(input_csv, filters):
                 df = df[df[column].str.contains(value, case=False, na=False)]
 
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    # Save the filtered data to a new CSV file
-    df.to_csv("financial_metrics", index=False)
+
     # Replace all NaN values with "N/A"
     df = df.fillna("N/A")
 
@@ -320,7 +331,8 @@ def filter_saved_data(input_csv, filters):
     'FCF/EV': (None, None), # Filter for FCF/EVB: (min, max).
     'EV/EBITDA': (None, None),  # Filter for Enterprise Value/EBITDA ratio: (min, max).
     'Recent 52-Week High': None,  # Filter for stocks that hit a new 52-week high recently. Set to True for filtering.
-    'Sector': None  # Filter by sector, e.g., 'Technology', 'Healthcare'. Set to a string for filtering.
+    'Sector': None,  # Filter by sector, e.g., 'Technology', 'Healthcare'. Set to a string for filtering.
+    'Industry': None #Filter by industry e.g., 'Software - Application', 'Grocery Stores'. Set to a string for filtering.
 }"""
 
 #tickers_df = pd.read_csv("Stock_Universe.csv")
@@ -328,6 +340,6 @@ def filter_saved_data(input_csv, filters):
 
 
 # Call the function with the provided filters
-#filter_saved_data("financial_data.csv", filters)
+#filter_saved_data("financial_metrics.csv", filters)
 
 ########################################################################################################################

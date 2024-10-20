@@ -40,9 +40,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 sorter: "boolean",
                 formatter: "tickCross"
             },
-            { title: "Sector", field: "Sector", sorter: "string" }
+            { title: "Sector", field: "Sector", sorter: "string" },
+            { title: "Industry", field: "Industry", sorter: "string" }
         ]
     });
+
+        // Populate the Industry dropdown
+    const industrySelect = document.getElementById('industry');
+
+    fetch('/get_industries')
+        .then(response => {
+            console.log("Response received:", response);  // Log the full response
+            return response.json();  // Convert response to JSON
+        })
+        .then(industries => {
+            console.log("Industries received:", industries);  // Log the received industry data
+
+            // Sort industries alphabetically
+            industries.sort();
+
+            industrySelect.innerHTML = '';  // Clear any existing options
+
+            // Add "Any" option at the top
+            const anyOption = document.createElement('option');
+            anyOption.value = "Any";
+            anyOption.text = "Any";
+            industrySelect.appendChild(anyOption);
+
+            // Add the fetched industry options
+            industries.forEach(industry => {
+                const option = document.createElement('option');
+                option.value = industry;
+                option.text = industry;
+                industrySelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching industries:', error));
+
     // Custom formatter for Market Cap with $ sign, abbreviations, and comma formatting
     function marketCapFormatter(cell, formatterParams, onRendered) {
         let value = cell.getValue();
@@ -105,7 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'FCF/EV': getMinMax('fcfEvMin', 'fcfEvMax'),
             'EV/EBITDA': getMinMax('evEbitdaMin', 'evEbitdaMax'),
             'Recent 52-Week High': mapRecent52WeekHigh(document.getElementById('recent52WeekHigh').value),
-            'Sector': document.getElementById('sector').value !== "Any" ? document.getElementById('sector').value : null
+            'Sector': document.getElementById('sector').value !== "Any" ? document.getElementById('sector').value : null,
+            'Industry': document.getElementById('industry').value !== "Any" ? document.getElementById('industry').value : null
         };
 
         console.log("Filters to be sent to backend:", filters);
