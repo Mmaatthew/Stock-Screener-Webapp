@@ -49,27 +49,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectorSelect = document.getElementById('sector');
 
     fetch('/get_sectors')
-        .then(response => response.json())
+        .then(response => {
+            console.log("Response received:", response);  // Log the full response
+            return response.json();  // Convert response to JSON
+        })
         .then(sectors => {
             console.log("Sectors received:", sectors);  // Log the received sector data
 
             // Sort sectors alphabetically
             sectors.sort();
 
-            // Clear any existing options in the select dropdown
-            sectorSelect.innerHTML = '';
+            const sectorSelect = document.getElementById('sector');
+            sectorSelect.innerHTML = '';  // Clear any existing options
 
-            // Add a default "Any" option
-            const defaultOption = document.createElement('option');
-            defaultOption.value = "";
-            defaultOption.textContent = "Any";
-            sectorSelect.appendChild(defaultOption);
+            // Add "Any" option at the top
+            const anyOption = document.createElement('option');
+            anyOption.value = "Any";
+            anyOption.text = "Any";
+            sectorSelect.appendChild(anyOption);
 
-            // Populate the dropdown with the received sectors
+            // Add the fetched sector options
             sectors.forEach(sector => {
                 const option = document.createElement('option');
                 option.value = sector;
-                option.textContent = sector;
+                option.text = sector;
                 sectorSelect.appendChild(option);
             });
         })
