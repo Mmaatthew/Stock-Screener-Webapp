@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
             { title: "ROIC (%)", field: "ROIC (%)", sorter: "number", formatter: percentageFormatter },
             { title: "Profit Margin (%)", field: "Profit Margin (%)", sorter: "number", formatter: percentageFormatter },
             { title: "Gross Margin (%)", field: "Gross Margin (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "Free Cash Flow Yield (%)", field: "Free Cash Flow Yield (%)", sorter: "number", formatter: percentageFormatter },
+            { title: "FCF Yield (%)", field: "FCF Yield (%)", sorter: "number", formatter: percentageFormatter },
+            { title: "FCF/EV", field: "FCF/EV", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
             { title: "EV/EBITDA", field: "EV/EBITDA", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
             {
                 title: "Recent 52-Week High",
@@ -100,7 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'ROIC (%)': getMinMax('roicMin', 'roicMax'),
             'Profit Margin (%)': getMinMax('profitMarginMin', 'profitMarginMax'),
             'Gross Margin (%)': getMinMax('grossMarginMin', 'grossMarginMax'),
-            'Free Cash Flow Yield (%)': getMinMax('fcfYieldMin', 'fcfYieldMax'),
+            'FCF Yield (%)': getMinMax('fcfYieldMin', 'fcfYieldMax'),
+            'FCF/EV': getMinMax('fcfEvMin', 'fcfEvMax'),
             'EV/EBITDA': getMinMax('evEbitdaMin', 'evEbitdaMax'),
             'Recent 52-Week High': mapRecent52WeekHigh(document.getElementById('recent52WeekHigh').value),
             'Sector': document.getElementById('sector').value !== "Any" ? document.getElementById('sector').value : null

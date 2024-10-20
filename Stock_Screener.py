@@ -4,7 +4,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
-def calculate_free_cash_flow_yield(stock, info):
+def calculate_fcf_ttm(stock):
     # Free Cash Flow TTM calculation
     cashflow_quarterly = stock.quarterly_cashflow
     try:
@@ -16,10 +16,24 @@ def calculate_free_cash_flow_yield(stock, info):
         operating_cash_flow_ttm = operating_cash_flow.sum()
         capital_expenditure_ttm = capital_expenditure.sum()
         fcf_ttm = operating_cash_flow_ttm + capital_expenditure_ttm
-        # Free Cash Flow Yield calculation using Enterprise Value
-        enterprise_value = info.get('enterpriseValue', 'N/A')
 
-        return (fcf_ttm / enterprise_value) * 100 if enterprise_value != 'N/A' else 'N/A'
+        return fcf_ttm
+    except Exception as e:
+        return 'N/A'
+
+
+def calculate_free_cash_flow_yield(stock, info):
+    try:
+        # Get Free Cash Flow TTM
+        fcf_ttm = calculate_fcf_ttm(stock)
+
+        # Get Market Capitalization from 'info'
+        market_cap = info.get('marketCap', 'N/A')
+
+        # Calculate Free Cash Flow Yield (FCF / Market Cap)
+        fcf_yield = (fcf_ttm / market_cap) * 100 if market_cap != 'N/A' else 'N/A'
+
+        return fcf_yield
     except Exception as e:
         return 'N/A'
 
@@ -45,6 +59,29 @@ def calculate_eps_growth(income_stmt):
     except Exception as e:
         return 'N/A'
 
+
+def calculate_fcf_ev(stock, info):
+    try:
+        # Check if the sector/industry indicates a bank or insurance company
+        sector = info.get('sector', 'N/A')
+        industry = info.get('industry', 'N/A')
+
+        # Skip EV calculation for traditional banks and insurance companies
+        if sector == 'Financial Services' and ('Bank' in industry or 'Insurance' in industry):
+            return 'N/A'  # Skip EV calculation for banks and insurance companies
+
+        # Get Free Cash Flow TTM
+        fcf_ttm = calculate_fcf_ttm(stock)
+
+        # Get Enterprise Value directly from 'info'
+        enterprise_value = info.get('enterpriseValue', 'N/A')
+
+        # Calculate FCF/EV (Free Cash Flow / Enterprise Value)
+        fcf_ev = (fcf_ttm / enterprise_value) * 100 if enterprise_value != 'N/A' else 'N/A'
+
+        return fcf_ev
+    except Exception as e:
+        return 'N/A'
 
 # Function to calculate ROIC (TTM)
 def calculate_roic_ttm(stock):
@@ -160,6 +197,14 @@ def safe_numeric(value):
     except (ValueError, TypeError):
         return 'N/A'
 
+def is_bank_or_insurance(info):
+    """Check if the company is a bank or insurance company based on sector/industry."""
+    sector = info.get('sector', 'N/A')
+    industry = info.get('industry', 'N/A')
+
+    # Check for banks or insurance companies in the Financial Services sector
+    return sector == 'Financial Services' and ('Bank' in industry or 'Insurance' in industry)
+
 # Function to fetch financial data for a single stock ticker
 def fetch_financial_data(ticker):
     stock = yf.Ticker(ticker)
@@ -167,6 +212,9 @@ def fetch_financial_data(ticker):
     income_stmt = stock.financials
 
     forward_eps_growth = safe_numeric(info.get('earningsGrowth', 'N/A')) * 100 if info.get('earningsGrowth') else 'N/A'
+
+    # Check if the company is a bank or insurance company
+    is_financial_institution = is_bank_or_insurance(info)
 
     return {
         'Ticker': ticker,
@@ -176,8 +224,8 @@ def fetch_financial_data(ticker):
         'P/S Ratio': safe_numeric(info.get('priceToSalesTrailing12Months', 'N/A')),
         'P/B Ratio': safe_numeric(info.get('priceToBook', 'N/A')),
         'Dividend Yield (%)': safe_numeric(info.get('dividendYield', 'N/A')) * 100 if info.get('dividendYield') else 'N/A',
-        'Current Ratio': safe_numeric(info.get('currentRatio', 'N/A')),
-        'Debt/Equity': safe_numeric(info.get('debtToEquity', 'N/A')) / 100 if safe_numeric(info.get('debtToEquity', 'N/A')) != 'N/A' else 'N/A',  # Ensure this value is numeric
+        'Current Ratio': 'N/A' if is_financial_institution else safe_numeric(info.get('currentRatio', 'N/A')),
+        'Debt/Equity': 'N/A' if is_financial_institution else safe_numeric(info.get('debtToEquity', 'N/A')) / 100 if safe_numeric(info.get('debtToEquity', 'N/A')) != 'N/A' else 'N/A',
         'Revenue Growth 4Y (%)': calculate_revenue_growth(stock),
         'EPS Growth 4Y (%)': calculate_eps_growth(income_stmt),
         'Forward EPS Growth (%)': forward_eps_growth,
@@ -187,9 +235,10 @@ def fetch_financial_data(ticker):
         'ROA (%)': calculate_roaa_ttm(stock),
         'ROIC (%)': calculate_roic_ttm(stock),
         'Profit Margin (%)': safe_numeric(info.get('profitMargins', 'N/A')) * 100 if info.get('profitMargins') else 'N/A',
-        'Gross Margin (%)': safe_numeric(info.get('grossMargins', 'N/A')) * 100 if info.get('grossMargins') else 'N/A',
-        'Free Cash Flow Yield (%)': calculate_free_cash_flow_yield(stock, info),
-        'EV/EBITDA': safe_numeric(info.get('enterpriseToEbitda', 'N/A')),
+        'Gross Margin (%)': 'N/A' if is_financial_institution else safe_numeric(info.get('grossMargins', 'N/A')) * 100 if info.get('grossMargins') else 'N/A',
+        'FCF Yield (%)': 'N/A' if is_financial_institution else calculate_free_cash_flow_yield(stock, info),
+        'FCF/EV': 'N/A' if is_financial_institution else calculate_fcf_ev(stock, info),
+        'EV/EBITDA': 'N/A' if is_financial_institution else safe_numeric(info.get('enterpriseToEbitda', 'N/A')),
         'Recent 52-Week High': check_new_52_week_high(stock),
         'Sector': info.get('sector', 'N/A')
     }
@@ -239,7 +288,8 @@ def filter_saved_data(input_csv, filters):
                 df = df[df[column].str.contains(value, case=False, na=False)]
 
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-
+    # Save the filtered data to a new CSV file
+    df.to_csv("financial_metrics", index=False)
     # Replace all NaN values with "N/A"
     df = df.fillna("N/A")
 
@@ -266,17 +316,18 @@ def filter_saved_data(input_csv, filters):
     'ROIC (%)': (None, None),  # Filter for Return on Invested Capital: (min, max) in percentage.
     'Profit Margin (%)': (None, None),  # Filter for Profit Margin: (min, max) in percentage.
     'Gross Margin (%)': (None, None),  # Filter for Gross Margin: (min, max) in percentage.
-    'Free Cash Flow Yield (%)': (None, None),  # Filter for Free Cash Flow Yield: (min, max) in percentage.
+    'FCF Yield (%)': (None, None),  # Filter for Free Cash Flow Yield: (min, max) in percentage.
+    'FCF/EV': (None, None), # Filter for FCF/EVB: (min, max).
     'EV/EBITDA': (None, None),  # Filter for Enterprise Value/EBITDA ratio: (min, max).
     'Recent 52-Week High': None,  # Filter for stocks that hit a new 52-week high recently. Set to True for filtering.
     'Sector': None  # Filter by sector, e.g., 'Technology', 'Healthcare'. Set to a string for filtering.
 }"""
 
-#tickers_df = pd.read_csv("Stock Universe.csv")
-#fetch_financial_data_and_save(tickers_df, 'financial_data.csv')
+#tickers_df = pd.read_csv("Stock_Universe.csv")
+#fetch_financial_data_and_save(tickers_df, 'financial_metrics.csv')
 
 
 # Call the function with the provided filters
-#filter_saved_data("financial_data.csv", "filtered_financial_data.csv", filters)
+#filter_saved_data("financial_data.csv", filters)
 
 ########################################################################################################################
