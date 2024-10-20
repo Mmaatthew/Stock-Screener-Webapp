@@ -45,6 +45,36 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     });
 
+    // Fetch sectors and populate the Sector dropdown without Choices.js
+    const sectorSelect = document.getElementById('sector');
+
+    fetch('/get_sectors')
+        .then(response => response.json())
+        .then(sectors => {
+            console.log("Sectors received:", sectors);  // Log the received sector data
+
+            // Sort sectors alphabetically
+            sectors.sort();
+
+            // Clear any existing options in the select dropdown
+            sectorSelect.innerHTML = '';
+
+            // Add a default "Any" option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "Any";
+            sectorSelect.appendChild(defaultOption);
+
+            // Populate the dropdown with the received sectors
+            sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                sectorSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching sectors:', error));
+
         // Populate the Industry dropdown
     const industrySelect = document.getElementById('industry');
 

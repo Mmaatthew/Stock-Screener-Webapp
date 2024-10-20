@@ -103,6 +103,18 @@ def get_industries():
     # Return the unique industries as JSON
     return jsonify(industries)
 
+@app.route('/get_sectors', methods=['GET'])
+def get_sectors():
+    # Load the CSV file (ensure the path to your file is correct)
+    df = pd.read_csv("financial_metrics.csv")
+
+    # Extract unique sectors
+    sectors = df['Sector'].dropna().unique().tolist()
+
+    # Return the sectors as a JSON response
+    return jsonify(sectors)
+
+
 @app.route('/filter_data', methods=['POST'])
 def filter_data():
     # Get the incoming JSON data from the request (filters sent from the frontend)
