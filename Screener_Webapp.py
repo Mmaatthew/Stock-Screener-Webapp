@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, current_app
 import download_universe
 import Stock_Screener
 import threading
@@ -11,6 +11,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 import numpy as np
 import os
+import re
+from scipy.stats import iqr
 
 app = Flask(__name__)
 
@@ -50,23 +52,28 @@ def fetch_and_save_metrics():
 
 # Function to run all tasks daily in sequence
 def run_daily_tasks():
+    #try:
+    #    scrape_and_save()            # Step 1: Scrape stock tickers
+    #    print("All files have been scraped and saved.")
+    #except Exception as e:
+    #    print(f"Error during scraping: {str(e)}")
+    #try:
+    #    fetch_and_save_metrics()     # Step 2: Fetch financial metrics
+    #   print("All financial metrics have been saved.")
+    #except Exception as e:
+    #    print(f"Error during financial metrics fetching: {str(e)}")
     try:
-        scrape_and_save()            # Step 1: Scrape stock tickers
-        print("All files have been scraped and saved.")
+        with app.app_context():
+            save_highlighted_data()  # Now calls with the app context
+            print("All tasks completed for the day.")
     except Exception as e:
-        print(f"Error during scraping: {str(e)}")
-
-    try:
-        fetch_and_save_metrics()     # Step 2: Fetch financial metrics
-        print("All tasks completed for the day.")
-    except Exception as e:
-        print(f"Error during financial metrics fetching: {str(e)}")
+        print(f"Error during calculating industry averages: {str(e)}")
 
 # Initialize the APScheduler
 scheduler = BackgroundScheduler()
 
 # Schedule the tasks to run daily at 4:30 PM (you can adjust the time)
-scheduler.add_job(run_daily_tasks, CronTrigger(hour=20, minute=35))  # Runs at 4:30 PM every day
+scheduler.add_job(run_daily_tasks, CronTrigger(hour=16, minute=30))  # Runs at 4:30 PM every day
 
 # Start the scheduler
 scheduler.start()
@@ -78,19 +85,30 @@ def check_status():
 
 @app.route('/get_initial_data', methods=['GET'])
 def get_initial_data():
-    # Load the dataset (adjust the path to your CSV file)
-    df = pd.read_csv("financial_metrics.csv")
+    try:
 
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        # Load the financial data and highlighted data
+        financial_df = pd.read_csv('financial_metrics.csv')
+        highlighted_df = pd.read_csv('highlighted_sector_averages.csv')
 
-    # Replace all NaN values with "N/A"
-    df = df.fillna("N/A")
+        # Merge on 'Ticker' (or another appropriate column)
+        merged_df = pd.merge(financial_df, highlighted_df, on='Ticker', how='left')
 
-    # Convert the DataFrame to a list of dictionaries
-    data = df.to_dict(orient='records')
+        # Replace 'N/A', inf, and -inf with np.nan
+        merged_df.replace([np.inf, -np.inf, 'N/A'], np.nan, inplace=True)
 
-    # Return the data directly as a JSON response
-    return jsonify(data)
+        # Explicitly call infer_objects to avoid future warnings
+        merged_df = merged_df.infer_objects()
+
+        # Replace all NaN values in the processed DataFrame with "N/A"
+        merged_df = merged_df.fillna("N/A")
+
+        # Return JSON response
+        return jsonify(merged_df.to_dict(orient="records"))
+
+    except Exception as e:
+        print(f"Error in get_initial_data: {str(e)}")
+        return jsonify({'error': 'An error occurred while processing data.'}), 500
 
 @app.route('/get_industries', methods=['GET'])
 def get_industries():
@@ -115,6 +133,106 @@ def get_sectors():
     return jsonify(sectors)
 
 
+# Function to clean up any problematic characters and ensure formatting consistency
+def clean_text(text):
+    if isinstance(text, str):
+        # Standardize and fix encoding issues
+        text = text.replace('â€”', ' - ')
+        text = text.replace('—', ' - ')
+
+        # Special handling for REITs (ensure "REIT-" stays intact)
+        text = text.replace("REIT-", "REIT - ")
+
+        # Add a space before any uppercase letter following a lowercase (e.g., REITDiversified -> REIT - Diversified)
+        text = re.sub(r'([a-z])([A-Z])', r'\1 - \2', text)
+
+        return text.strip()  # Only strip strings
+    return text  # Return the original value if it's not a string (e.g., float, NaN, etc.)
+
+@app.route('/save_highlighted_data', methods=['GET', 'POST'])
+def save_highlighted_data():
+    try:
+        # Load the data from 'financial_metrics.csv' for processing
+        df = pd.read_csv('financial_metrics.csv')
+
+        # Calculate highlights based on sector averages and save to CSV
+        highlighted_df = calculate_and_highlight_sector_averages(df)
+        highlighted_df.to_csv('highlighted_sector_averages.csv', index=False)
+
+        print('Highlighted data saved successfully.')
+        return jsonify({'status': 'success', 'message': 'Highlighted data saved to CSV.'}), 200
+
+    except Exception as e:
+        print(f"Error in save_highlighted_data: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+def calculate_and_highlight_sector_averages(df):
+    # Clean the Industry column
+    df['Sector'] = df['Sector'].apply(clean_text)
+    df = df.dropna(subset=['Sector']).copy()
+    df.replace(['N/A', np.inf, -np.inf], np.nan, inplace=True)
+    columns_to_exclude = ['Ticker', 'Market Cap', 'Recent 52-Week High', 'Sector', 'Industry']
+    numeric_columns = [col for col in df.columns if col not in columns_to_exclude]
+
+    # Calculate sector averages and apply IQR filtering
+    sector_avg_dict = {}
+    for sector, group in df.groupby('Sector'):
+        sector_avg_dict[sector] = {}
+        for col in numeric_columns:
+            valid_data = group[col].dropna()
+            if len(valid_data) > 0:
+                q1 = valid_data.quantile(0.25)
+                q3 = valid_data.quantile(0.75)
+                lower_bound = q1 - 1.5 * iqr(valid_data)
+                upper_bound = q3 + 1.5 * iqr(valid_data)
+                filtered_data = valid_data[(valid_data >= lower_bound) & (valid_data <= upper_bound)]
+                sector_avg_dict[sector][col] = filtered_data.mean() if len(filtered_data) > 0 else np.nan
+            else:
+                sector_avg_dict[sector][col] = np.nan
+
+    # Convert to DataFrame for easier merging and highlighting
+    sector_avg_df = pd.DataFrame.from_dict(sector_avg_dict, orient='index')
+    sector_avg_df.to_csv('sector_averages.csv', index=True)  # Save sector averages
+
+    # Convert to DataFrame for easier merging and highlighting
+    sector_avg_df = pd.DataFrame.from_dict(sector_avg_dict, orient='index')
+    sector_avg_df.to_csv('sector_averages.csv', index=True)  # Save sector averages
+
+    # Copy the original DataFrame to preserve data integrity
+    highlighted_df = df.copy()
+
+    # Add highlighting based on sector average comparisons
+    for col in numeric_columns:
+        def highlight_comparison(row):
+            sector_avg = sector_avg_df.at[row['Sector'], col] if row['Sector'] in sector_avg_df.index else None
+            if pd.isnull(sector_avg) or pd.isnull(row[col]):
+                return "within"
+
+            # Determine the comparison thresholds based on whether the sector average is positive or negative
+            if sector_avg > 0:
+                above_threshold = sector_avg * 1.35
+                below_threshold = sector_avg * 0.65
+            else:
+                above_threshold = sector_avg * 0.65  # A smaller negative number (closer to zero) is "above" the average
+                below_threshold = sector_avg * 1.35  # A larger negative number (further from zero) is "below" the average
+
+            # Apply the highlighting logic
+            if row[col] > above_threshold:
+                return "above"
+            elif row[col] < below_threshold:
+                return "below"
+            else:
+                return "within"
+        highlighted_df[f"{col}_highlight"] = highlighted_df.apply(highlight_comparison, axis=1)
+
+    # Save only 'Ticker' and highlighted columns to CSV
+    highlight_columns = [col for col in highlighted_df.columns if '_highlight' in col]
+    final_df = highlighted_df[['Ticker'] + highlight_columns]
+    final_df.to_csv('highlighted_sector_averages.csv', index=False)
+
+    return final_df
+
 @app.route('/filter_data', methods=['POST'])
 def filter_data():
     # Get the incoming JSON data from the request (filters sent from the frontend)
@@ -131,8 +249,17 @@ def filter_data():
     # Apply the filters using the filter_saved_data function
     filtered_df = Stock_Screener.filter_saved_data("financial_metrics.csv", filters)
 
+    # Load highlighted data
+    highlighted_df = pd.read_csv('highlighted_sector_averages.csv')
+
+    # Merge on 'Ticker' (or another appropriate column)
+    merged_df = pd.merge(filtered_df, highlighted_df, on='Ticker', how='left')
+
+    # Replace all NaN values in the processed DataFrame with "N/A"
+    merged_df = merged_df.fillna("N/A")
+
     # Convert the filtered DataFrame to JSON and return it
-    data = filtered_df.to_dict(orient='records')
+    data = merged_df.to_dict(orient='records')
 
     return jsonify(data)
 

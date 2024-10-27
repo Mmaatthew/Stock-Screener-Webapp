@@ -1,10 +1,9 @@
-from idlelib.iomenu import encoding
-
 import yfinance as yf
 import pandas as pd
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
+import re
 
 def calculate_fcf_ttm(stock):
     # Free Cash Flow TTM calculation
@@ -218,11 +217,21 @@ def fetch_financial_data(ticker):
     # Check if the company is a bank or insurance company
     is_financial_institution = is_bank_or_insurance(info)
 
+    # Fetch and process each metric, applying condition to set None if values are less than zero
+    forward_pe = safe_numeric(info.get('forwardPE', 'N/A'))
+    peg_ratio = safe_numeric(info.get('pegRatio', 'N/A'))
+    ev_to_ebitda = safe_numeric(info.get('enterpriseToEbitda', 'N/A'))
+
+    # Apply condition to set None if values are less than zero
+    forward_pe = 'N/A' if isinstance(forward_pe, (int, float)) and forward_pe < 0 else forward_pe
+    peg_ratio = 'N/A' if isinstance(peg_ratio, (int, float)) and peg_ratio < 0 else peg_ratio
+    ev_to_ebitda = 'N/A' if isinstance(ev_to_ebitda, (int, float)) and ev_to_ebitda < 0 else ev_to_ebitda
+
     return {
         'Ticker': ticker,
         'Market Cap': info.get('marketCap', 'N/A'),
         'PE Ratio': safe_numeric(info.get('trailingPE', 'N/A')),
-        'Forward P/E': safe_numeric(info.get('forwardPE', 'N/A')),
+        'Forward P/E': forward_pe,
         'P/S Ratio': safe_numeric(info.get('priceToSalesTrailing12Months', 'N/A')),
         'P/B Ratio': safe_numeric(info.get('priceToBook', 'N/A')),
         'Dividend Yield (%)': safe_numeric(info.get('dividendYield', 'N/A')) * 100 if info.get('dividendYield') else 'N/A',
@@ -232,7 +241,7 @@ def fetch_financial_data(ticker):
         'EPS Growth 4Y (%)': calculate_eps_growth(income_stmt),
         'Forward EPS Growth (%)': forward_eps_growth,
         'EPS': safe_numeric(info.get('trailingEps', 'N/A')),
-        'PEG Ratio': safe_numeric(info.get('pegRatio', 'N/A')),
+        'PEG Ratio': peg_ratio,
         'ROE (%)': safe_numeric(info.get('returnOnEquity', 'N/A')) * 100 if info.get('returnOnEquity') else 'N/A',
         'ROA (%)': calculate_roaa_ttm(stock),
         'ROIC (%)': calculate_roic_ttm(stock),
@@ -240,12 +249,26 @@ def fetch_financial_data(ticker):
         'Gross Margin (%)': 'N/A' if is_financial_institution else safe_numeric(info.get('grossMargins', 'N/A')) * 100 if info.get('grossMargins') else 'N/A',
         'FCF Yield (%)': 'N/A' if is_financial_institution else calculate_free_cash_flow_yield(stock, info),
         'FCF/EV': 'N/A' if is_financial_institution else calculate_fcf_ev(stock, info),
-        'EV/EBITDA': 'N/A' if is_financial_institution else safe_numeric(info.get('enterpriseToEbitda', 'N/A')),
+        'EV/EBITDA': ev_to_ebitda,
         'Recent 52-Week High': check_new_52_week_high(stock),
         'Sector': info.get('sector', 'N/A'),
-        'Industry': info.get('industry', 'N/A'),  # Add this line to include Industry
+        'Industry': info.get('industry', 'N/A'),
     }
 
+def clean_text(text):
+    if isinstance(text, str):
+        # Standardize and fix encoding issues
+        text = text.replace('â€”', ' - ')
+        text = text.replace('—', ' - ')
+
+        # Special handling for REITs (ensure "REIT-" stays intact)
+        text = text.replace("REIT-", "REIT - ")
+
+        # Add a space before any uppercase letter following a lowercase (e.g., REITDiversified -> REIT - Diversified)
+        text = re.sub(r'([a-z])([A-Z])', r'\1 - \2', text)
+
+        return text.strip()  # Only strip strings
+    return text  # Return the original value if it's not a string (e.g., float, NaN, etc.)
 
 # Function to fetch financial data and save to CSV with multithreading and progress bar
 def fetch_financial_data_and_save(ticker_df, output_csv, max_workers=10):
@@ -262,20 +285,19 @@ def fetch_financial_data_and_save(ticker_df, output_csv, max_workers=10):
             ticker = future_to_ticker[future]
             try:
                 data = future.result()
+                # Clean up any problematic text/characters in the Industry field
+                if 'Industry' in data:
+                    data['Industry'] = clean_text(data['Industry'])
+
                 data_list.append(data)
             except Exception as e:
                 print(f"Error fetching data for {ticker}: {e}")
 
     # Convert the list of data to a DataFrame and save it as CSV
     df = pd.DataFrame(data_list)
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.to_csv(output_csv, index=False, encoding='utf-8')
     print(f"Data saved to {output_csv}")
-
-def clean_text(text):
-    """Cleans common problematic encoding issues in text."""
-    if isinstance(text, str):
-        text = text.replace('â€”', '—')  # Replace em dash
-    return text
 
 # Function to filter the saved data, format specific columns, and fill empty cells with "N/A"
 def filter_saved_data(input_csv, filters):

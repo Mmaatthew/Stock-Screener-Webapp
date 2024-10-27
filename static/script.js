@@ -14,26 +14,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 sorter: "number",  // Sort as a numeric value
                 formatter: marketCapFormatter,  // Custom formatter for Market Cap with $ sign and abbreviations
             },
-            { title: "PE Ratio", field: "PE Ratio", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "Forward P/E", field: "Forward P/E", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "P/S Ratio", field: "P/S Ratio", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "P/B Ratio", field: "P/B Ratio", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "Dividend Yield (%)", field: "Dividend Yield (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "Current Ratio", field: "Current Ratio", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "Debt/Equity", field: "Debt/Equity", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "Revenue Growth 4Y (%)", field: "Revenue Growth 4Y (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "EPS Growth 4Y (%)", field: "EPS Growth 4Y (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "Forward EPS Growth (%)", field: "Forward EPS Growth (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "EPS", field: "EPS", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "PEG Ratio", field: "PEG Ratio", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "ROE (%)", field: "ROE (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "ROA (%)", field: "ROA (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "ROIC (%)", field: "ROIC (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "Profit Margin (%)", field: "Profit Margin (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "Gross Margin (%)", field: "Gross Margin (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "FCF Yield (%)", field: "FCF Yield (%)", sorter: "number", formatter: percentageFormatter },
-            { title: "FCF/EV", field: "FCF/EV", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
-            { title: "EV/EBITDA", field: "EV/EBITDA", sorter: "number", formatter: "money", formatterParams: { thousand: ",", precision: 2 } },
+            { title: "PE Ratio", field: "PE Ratio", sorter: "number", formatter: cell => highlightTextFormatter(cell, "PE Ratio", moneyFormatter) },
+            { title: "Forward P/E", field: "Forward P/E", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Forward P/E", moneyFormatter) },
+            { title: "P/S Ratio", field: "P/S Ratio", sorter: "number", formatter: cell => highlightTextFormatter(cell, "P/S Ratio", moneyFormatter) },
+            { title: "P/B Ratio", field: "P/B Ratio", sorter: "number", formatter: cell => highlightTextFormatter(cell, "P/B Ratio", moneyFormatter) },
+            { title: "Dividend Yield (%)", field: "Dividend Yield (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Dividend Yield (%)", percentageFormatter) },
+            { title: "Current Ratio", field: "Current Ratio", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Current Ratio", moneyFormatter) },
+            { title: "Debt/Equity", field: "Debt/Equity", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Debt/Equity", moneyFormatter) },
+            { title: "Revenue Growth 4Y (%)", field: "Revenue Growth 4Y (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Revenue Growth 4Y (%)", percentageFormatter) },
+            { title: "EPS Growth 4Y (%)", field: "EPS Growth 4Y (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "EPS Growth 4Y (%)", percentageFormatter) },
+            { title: "Forward EPS Growth (%)", field: "Forward EPS Growth (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Forward EPS Growth (%)", percentageFormatter) },
+            { title: "EPS", field: "EPS", sorter: "number", formatter: cell => highlightTextFormatter(cell, "EPS", moneyFormatter) },
+            { title: "PEG Ratio", field: "PEG Ratio", sorter: "number", formatter: cell => highlightTextFormatter(cell, "PEG Ratio", moneyFormatter) },
+            { title: "ROE (%)", field: "ROE (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "ROE (%)", percentageFormatter) },
+            { title: "ROA (%)", field: "ROA (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "ROA (%)", percentageFormatter) },
+            { title: "ROIC (%)", field: "ROIC (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "ROIC (%)", percentageFormatter) },
+            { title: "Profit Margin (%)", field: "Profit Margin (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Profit Margin (%)", percentageFormatter) },
+            { title: "Gross Margin (%)", field: "Gross Margin (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "Gross Margin (%)", percentageFormatter) },
+            { title: "FCF Yield (%)", field: "FCF Yield (%)", sorter: "number", formatter: cell => highlightTextFormatter(cell, "FCF Yield (%)", percentageFormatter) },
+            { title: "FCF/EV", field: "FCF/EV", sorter: "number", formatter: cell => highlightTextFormatter(cell, "FCF/EV", moneyFormatter) },
+            { title: "EV/EBITDA", field: "EV/EBITDA", sorter: "number", formatter: cell => highlightTextFormatter(cell, "EV/EBITDA", moneyFormatter) },
             {
                 title: "Recent 52-Week High",
                 field: "Recent 52-Week High",
@@ -110,6 +110,31 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error fetching industries:', error));
 
+    function highlightTextFormatter(cell, fieldName, baseFormatter) {
+        const highlightStatus = cell.getRow().getData()[`${fieldName}_highlight`];
+        const value = baseFormatter(cell);
+
+        // Define color based on industry average comparison
+        if (fieldName === "Debt/Equity" || fieldName === "PEG Ratio" || fieldName === "EV/EBITDA" || fieldName === "PE Ratio" || fieldName === "Forward P/E" || fieldName === "P/S Ratio" || fieldName === "P/B Ratio") {
+            if (highlightStatus === "above") {
+                cell.getElement().style.color = "#ff4d4d";  // Red if 25% above average
+            } else if (highlightStatus === "below") {
+                cell.getElement().style.color = "#28a745";  // Green if 25% below average
+            } else {
+                cell.getElement().style.color = "";  // Default color for within range
+            }
+        } else {
+            if (highlightStatus === "above") {
+                cell.getElement().style.color = "#28a745";  // Green if above industry average
+            } else if (highlightStatus === "below") {
+                cell.getElement().style.color = "#ff4d4d";  // Red if below industry average
+            } else {
+                cell.getElement().style.color = "";  // No color for within range
+            }
+        }
+        return value;
+    }
+
     // Custom formatter for Market Cap with $ sign, abbreviations, and comma formatting
     function marketCapFormatter(cell, formatterParams, onRendered) {
         let value = cell.getValue();
@@ -129,6 +154,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let value = cell.getValue();
         return value !== "N/A" ? `${parseFloat(value).toFixed(2)}%` : value;
     }
+
+    function moneyFormatter(cell, formatterParams) {
+        let value = cell.getValue();
+        if (value === "N/A") {
+            return value;
+        } else {
+            return (value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    }
+
     // Convert formatted Market Cap input (e.g., 1,500.5B or 1,000M) to a numeric value
     function parseMarketCapInput(value) {
         if (!value) return null;
