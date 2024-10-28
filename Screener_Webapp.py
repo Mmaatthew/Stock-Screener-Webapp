@@ -52,16 +52,16 @@ def fetch_and_save_metrics():
 
 # Function to run all tasks daily in sequence
 def run_daily_tasks():
-    #try:
-    #    scrape_and_save()            # Step 1: Scrape stock tickers
-    #    print("All files have been scraped and saved.")
-    #except Exception as e:
-    #    print(f"Error during scraping: {str(e)}")
-    #try:
-    #    fetch_and_save_metrics()     # Step 2: Fetch financial metrics
-    #   print("All financial metrics have been saved.")
-    #except Exception as e:
-    #    print(f"Error during financial metrics fetching: {str(e)}")
+    try:
+        scrape_and_save()            # Step 1: Scrape stock tickers
+        print("All files have been scraped and saved.")
+    except Exception as e:
+        print(f"Error during scraping: {str(e)}")
+    try:
+        fetch_and_save_metrics()     # Step 2: Fetch financial metrics
+        print("All financial metrics have been saved.")
+    except Exception as e:
+        print(f"Error during financial metrics fetching: {str(e)}")
     try:
         with app.app_context():
             save_highlighted_data()  # Now calls with the app context
